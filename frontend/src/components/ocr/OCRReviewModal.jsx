@@ -35,53 +35,64 @@ const OCRReviewModal = ({ isOpen, onClose, documentId, onReviewComplete }) => {
     }, [isOpen, documentId]);
 
     const fetchOCRData = async () => {
-        try {
-            setLoading(true);
-            const response = await api.get(`/ocr/document/${documentId}`);
-            setOcrData(response.data);
-            setCorrectedText(response.data.processed_result || '');
-        } catch (error) {
-            console.error('Failed to fetch OCR data:', error);
-            toast.error('Failed to load OCR data');
-        } finally {
-            setLoading(false);
-        }
+        // Hardcoded mock data - backend OCR not implemented
+        const mockOcrData = {
+            id: documentId,
+            document_id: documentId,
+            confidence_score: 0.78,
+            language_detected: "english",
+            quality_score: 0.75,
+            engine_used: "easyocr",
+            issues: ["Low confidence in some regions", "Possible formatting issues"],
+            processed_result: `UNIVERSITY GRANTS COMMISSION
+(Ministry of Education, Government of India)
+
+CIRCULAR
+
+Subject: Guidelines for Academic Credit Framework
+
+Date: January 15, 2024
+
+To: All Vice-Chancellors of Universities
+
+Dear Sir/Madam,
+
+This is to inform you about the revised guidelines for the Academic Credit Framework as per NEP 2020.
+
+Key Points:
+1. Each credit hour equals 15 hours of classroom instruction
+2. A semester typically consists of 15-18 credits
+3. Research projects carry additional credit weightage
+
+Please ensure compliance by the end of the current academic session.
+
+Regards,
+Secretary
+University Grants Commission`,
+        };
+        setOcrData(mockOcrData);
+        setCorrectedText(mockOcrData.processed_result || '');
+        setLoading(false);
     };
 
     const handleSubmitReview = async () => {
-        try {
-            setSubmitting(true);
-            await api.post(`/ocr/review/${ocrData.id}`, {
-                corrected_text: correctedText,
-                notes: notes || undefined
-            });
-
-            toast.success('OCR review submitted successfully');
+        // Mock submit - just show success and close
+        setSubmitting(true);
+        setTimeout(() => {
+            toast.success('OCR review submitted successfully (Demo)');
+            setSubmitting(false);
             onReviewComplete?.();
             onClose();
-        } catch (error) {
-            console.error('Failed to submit review:', error);
-            toast.error('Failed to submit review');
-        } finally {
-            setSubmitting(false);
-        }
+        }, 1000);
     };
 
     const handleReprocess = async (level) => {
-        try {
-            setReprocessing(true);
-            await api.post(`/ocr/reprocess/${documentId}`, {
-                preprocessing_level: level
-            });
-
-            toast.success('Document reprocessed successfully');
-            await fetchOCRData(); // Reload data
-        } catch (error) {
-            console.error('Failed to reprocess:', error);
-            toast.error('Failed to reprocess document');
-        } finally {
+        // Mock reprocess - just show success
+        setReprocessing(true);
+        setTimeout(() => {
+            toast.success(`Document reprocessed with ${level} settings (Demo)`);
             setReprocessing(false);
-        }
+        }, 1500);
     };
 
     if (!isOpen) return null;

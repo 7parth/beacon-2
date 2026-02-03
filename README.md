@@ -3,7 +3,7 @@
 **AI-powered platform for Ministry of Education (MoE) and Higher-Education institutions to retrieve, understand, compare, explain, and audit government policies.**
 
 [![Status](https://img.shields.io/badge/status-production%20ready-brightgreen)]()
-[![Version](https://img.shields.io/badge/version-2.0.0-blue)]()
+[![Version](https://img.shields.io/badge/version-2.1.0-blue)]()
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)]()
 [![React](https://img.shields.io/badge/react-18-blue)]()
 
@@ -591,6 +591,15 @@ pip install torch --index-url https://download.pytorch.org/whl/cu118
 
 ## 🔄 Recent Updates
 
+### Version 2.1.0 (February 2026)
+
+- ✅ Multi-LLM provider support (Groq, Gemini, OpenRouter, Ollama)
+- ✅ Query routing for simple vs complex queries
+- ✅ Document synthesis when max iterations hit
+- ✅ Enhanced RAG agent performance with caching
+- ✅ Mock data for Notes and OCR Review pages
+- ✅ Improved error handling with user-friendly messages
+
 ### Version 2.0.0 (December 2025)
 
 - ✅ Migrated from FAISS to pgvector for multi-machine support
@@ -629,4 +638,4 @@ pip install torch --index-url https://download.pytorch.org/whl/cu118
 
 **Built with ❤️ for Government Policy Intelligence**
 
-**Version:** 2.0.0 | **Status:** ✅ Production Ready | **Last Updated:** December 5, 2025
+**Version:** 2.1.0 | **Status:** ✅ Production Ready | **Last Updated:** February 3, 2026

@@ -19,7 +19,7 @@ from backend.routers import (
     insights_router,
     document_chat_router,
     notes_router,
-    # ocr_router  # Temporarily disabled - uses EasyOCR dependencies
+    # ocr_router,  # Disabled - uses EasyOCR dependencies
 )
 # Temporary: Use no-DB version until migration is complete
 from backend.routers import web_scraping_router_temp as web_scraping_router
@@ -123,12 +123,12 @@ app.include_router(data_source_router.router, prefix="/data-sources", tags=["dat
 app.include_router(notification_router.router, prefix="/notifications", tags=["notifications"])
 app.include_router(insights_router.router, tags=["insights"])
 app.include_router(document_chat_router.router, tags=["document-chat"])
-app.include_router(notes_router.router, tags=["notes"])
+app.include_router(notes_router.router, prefix="/api", tags=["notes"])
 app.include_router(web_scraping_router.router, tags=["web-scraping"])  # Web scraping endpoints
 app.include_router(enhanced_scraping_router, tags=["enhanced-web-scraping"])  # Enhanced web scraping with families
 app.include_router(document_analysis_router.router, tags=["document-analysis"])  # Document analysis with AI
 app.include_router(scraping_logs.router, tags=["scraping-logs"])  # Scraping logs
-# app.include_router(ocr_router.router, prefix="/ocr", tags=["ocr"])  # Temporarily disabled - uses EasyOCR
+# app.include_router(ocr_router.router, prefix="/ocr", tags=["ocr"])  # Disabled - uses EasyOCR
 
 @app.get("/")
 async def root():

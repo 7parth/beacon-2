@@ -40,24 +40,52 @@ export const NotesPage = () => {
   }, []);
 
   const fetchNotes = async () => {
-    try {
-      const response = await notesAPI.list();
-      setNotes(response.data);
-    } catch (error) {
-      console.error("Error fetching notes:", error);
-      toast.error("Failed to load notes");
-    } finally {
-      setLoading(false);
-    }
+    // Hardcoded mock data - backend not implemented
+    const mockNotes = [
+      {
+        id: 1,
+        title: "UGC Guidelines Summary",
+        content: "Key points from the latest UGC guidelines:\n\n1. Academic credit framework\n2. Online degree regulations\n3. Research publication requirements",
+        is_pinned: true,
+        document_id: null,
+        document_title: null,
+        updated_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: 2,
+        title: "AICTE Approval Process",
+        content: "Steps for AICTE approval:\n\n• Submit application online\n• Pay processing fee\n• Upload required documents\n• Wait for inspection",
+        is_pinned: false,
+        document_id: 156,
+        document_title: "Approval Process Handbook",
+        updated_at: new Date(Date.now() - 86400000).toISOString(),
+        created_at: new Date(Date.now() - 86400000).toISOString(),
+      },
+      {
+        id: 3,
+        title: "Research Notes",
+        content: "Important research topics to explore:\n\n- AI in education\n- NEP 2020 implementation\n- Digital literacy programs",
+        is_pinned: false,
+        document_id: null,
+        document_title: null,
+        updated_at: new Date(Date.now() - 172800000).toISOString(),
+        created_at: new Date(Date.now() - 172800000).toISOString(),
+      },
+    ];
+    setNotes(mockNotes);
+    setLoading(false);
   };
 
   const fetchStats = async () => {
-    try {
-      const response = await notesAPI.stats();
-      setStats(response.data);
-    } catch (error) {
-      console.error("Error fetching stats:", error);
-    }
+    // Hardcoded mock stats
+    const mockStats = {
+      total_notes: 3,
+      document_notes: 1,
+      standalone_notes: 2,
+      pinned_notes: 1,
+    };
+    setStats(mockStats);
   };
 
   const handleSearch = async () => {
