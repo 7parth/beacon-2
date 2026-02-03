@@ -517,7 +517,7 @@ async def get_participants(
 
 
 @router.get("/search-users")
-@cache(expire=60)  # Cache for 1 minute - users don't change frequently
+@cache(expire=300)  # Cache for 5 minutes - users don't change frequently
 async def search_users_for_mention(
     document_id: int,
     query: str = Query(..., min_length=1),

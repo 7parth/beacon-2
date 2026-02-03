@@ -362,7 +362,7 @@ async def upload_documents(
 
 
 @router.get("/list")
-@cache(expire=30)  # Cache for 30 seconds (adjust based on your needs)
+@cache(expire=300)  # Cache for 5 minutes - documents don't change frequently
 async def list_documents(
     category: Optional[str] = None,
     search: Optional[str] = None,

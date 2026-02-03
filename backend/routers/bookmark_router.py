@@ -47,7 +47,7 @@ async def toggle_bookmark(
         return {"status": "added", "message": "Bookmark added"}
 
 @router.get("/list")
-@cache(expire=30)  # Cache for 30 seconds - bookmarks don't change frequently
+@cache(expire=180)  # Cache for 3 minutes - bookmarks don't change frequently
 async def list_bookmarks(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)

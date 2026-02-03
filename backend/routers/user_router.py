@@ -81,7 +81,7 @@ def log_audit(db: Session, user_id: int, action: str, metadata: dict):
 
 
 @router.get("/list", response_model=List[UserListResponse])
-@cache(expire=60)  # Cache for 1 minute - users don't change frequently
+@cache(expire=300)  # Cache for 5 minutes - users don't change frequently
 async def list_users(
     role: Optional[str] = Query(None, description="Filter by role"),
     approved: Optional[bool] = Query(None, description="Filter by approval status"),
