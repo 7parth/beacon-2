@@ -66,12 +66,93 @@ export const ActiveSourcesPage = () => {
 
     try {
       const response = await dataSourceAPI.activeSources();
-      setSources(response.data.sources || []);
+      const apiSources = response.data.sources || [];
+      
+      // Add demo data source for demonstration
+      const demoSource = {
+        id: 'demo-001',
+        name: 'IIT Delhi Student Records Database',
+        ministry_name: 'Indian Institute of Technology Delhi',
+        description: 'Student academic records and transcripts database',
+        db_type: 'postgresql',
+        host: 'db.iitd.ac.in',
+        port: 5432,
+        database_name: 'student_records',
+        table_name: 'documents',
+        request_status: 'active',
+        data_classification: 'institutional',
+        institution: {
+          id: 1,
+          name: 'Indian Institute of Technology Delhi',
+          type: 'university'
+        },
+        requested_by: {
+          id: 1,
+          name: 'Dr. Priya Sharma',
+          email: 'priya.sharma@iitd.ac.in'
+        },
+        approved_by: {
+          id: 2,
+          name: 'System Administrator',
+          email: 'admin@beacon.system'
+        },
+        sync_enabled: true,
+        last_sync_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+        last_sync_status: 'success',
+        last_sync_message: 'Successfully synced 2,847 documents',
+        total_documents_synced: 2847,
+        requested_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
+        approved_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString() // 6 days ago
+      };
+      
+      // Combine demo data with API data (demo first for visibility)
+      const allSources = [demoSource, ...apiSources];
+      setSources(allSources);
+      
       if (isRefresh) {
         toast.success("✅ Sources refreshed");
       }
     } catch (error) {
       console.error("Error fetching active sources:", error);
+      
+      // If API fails, still show demo data
+      const demoSource = {
+        id: 'demo-001',
+        name: 'IIT Delhi Student Records Database',
+        ministry_name: 'Indian Institute of Technology Delhi',
+        description: 'Student academic records and transcripts database',
+        db_type: 'postgresql',
+        host: 'db.iitd.ac.in',
+        port: 5432,
+        database_name: 'student_records',
+        table_name: 'documents',
+        request_status: 'active',
+        data_classification: 'institutional',
+        institution: {
+          id: 1,
+          name: 'Indian Institute of Technology Delhi',
+          type: 'university'
+        },
+        requested_by: {
+          id: 1,
+          name: 'Dr. Priya Sharma',
+          email: 'priya.sharma@iitd.ac.in'
+        },
+        approved_by: {
+          id: 2,
+          name: 'System Administrator',
+          email: 'admin@beacon.system'
+        },
+        sync_enabled: true,
+        last_sync_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        last_sync_status: 'success',
+        last_sync_message: 'Successfully synced 2,847 documents',
+        total_documents_synced: 2847,
+        requested_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+        approved_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString()
+      };
+      
+      setSources([demoSource]);
       toast.error(formatErrorForToast(error, "Failed to load active sources"));
     } finally {
       setLoading(false);
@@ -86,7 +167,76 @@ export const ActiveSourcesPage = () => {
     }
 
     setLoadingLogs((prev) => ({ ...prev, [sourceId]: true }));
+    
     try {
+      // If it's the demo source, return demo logs
+      if (sourceId === 'demo-001') {
+        const demoLogs = [
+          {
+            id: 'log-001',
+            status: 'success',
+            documents_fetched: 2847,
+            documents_processed: 2847,
+            documents_failed: 0,
+            error_message: null,
+            sync_duration_seconds: 78,
+            started_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+            completed_at: new Date(Date.now() - 2 * 60 * 60 * 1000 + 78000).toISOString()
+          },
+          {
+            id: 'log-002',
+            status: 'success',
+            documents_fetched: 156,
+            documents_processed: 156,
+            documents_failed: 0,
+            error_message: null,
+            sync_duration_seconds: 23,
+            started_at: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString(),
+            completed_at: new Date(Date.now() - 26 * 60 * 60 * 1000 + 23000).toISOString()
+          },
+          {
+            id: 'log-003',
+            status: 'success',
+            documents_fetched: 289,
+            documents_processed: 285,
+            documents_failed: 4,
+            error_message: 'Failed to process 4 corrupted PDF files from legacy system',
+            sync_duration_seconds: 45,
+            started_at: new Date(Date.now() - 50 * 60 * 60 * 1000).toISOString(),
+            completed_at: new Date(Date.now() - 50 * 60 * 60 * 1000 + 45000).toISOString()
+          },
+          {
+            id: 'log-004',
+            status: 'failed',
+            documents_fetched: 0,
+            documents_processed: 0,
+            documents_failed: 0,
+            error_message: 'Database connection timeout - IIT Delhi server maintenance',
+            sync_duration_seconds: 30,
+            started_at: new Date(Date.now() - 74 * 60 * 60 * 1000).toISOString(),
+            completed_at: new Date(Date.now() - 74 * 60 * 60 * 1000 + 30000).toISOString()
+          },
+          {
+            id: 'log-005',
+            status: 'success',
+            documents_fetched: 412,
+            documents_processed: 412,
+            documents_failed: 0,
+            error_message: null,
+            sync_duration_seconds: 34,
+            started_at: new Date(Date.now() - 98 * 60 * 60 * 1000).toISOString(),
+            completed_at: new Date(Date.now() - 98 * 60 * 60 * 1000 + 34000).toISOString()
+          }
+        ];
+        
+        setSyncLogs((prev) => ({
+          ...prev,
+          [sourceId]: demoLogs,
+        }));
+        return;
+      }
+      
+      // For real sources, fetch from API
       const response = await dataSourceAPI.syncLogs(sourceId, 5);
       setSyncLogs((prev) => ({
         ...prev,
@@ -203,7 +353,40 @@ export const ActiveSourcesPage = () => {
 
   const handleTriggerSync = async (sourceId, sourceName) => {
     setTriggeringSync((prev) => ({ ...prev, [sourceId]: true }));
+    
     try {
+      // If it's the demo source, simulate sync
+      if (sourceId === 'demo-001') {
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Update the demo source's last sync time
+        setSources(prevSources => 
+          prevSources.map(source => 
+            source.id === 'demo-001' 
+              ? {
+                  ...source,
+                  last_sync_at: new Date().toISOString(),
+                  last_sync_status: 'success',
+                  last_sync_message: `Demo sync completed at ${new Date().toLocaleTimeString()}`,
+                  total_documents_synced: (source.total_documents_synced || 0) + Math.floor(Math.random() * 50) + 10
+                }
+              : source
+          )
+        );
+        
+        // Clear cached logs so they refresh on next expand
+        setSyncLogs(prev => {
+          const newLogs = { ...prev };
+          delete newLogs['demo-001'];
+          return newLogs;
+        });
+        
+        toast.success(`✅ Demo sync completed for ${sourceName}`);
+        return;
+      }
+      
+      // For real sources, call the API
       await dataSourceAPI.triggerSync(sourceId);
       toast.success(`✅ Sync started for ${sourceName}`);
       // Refresh after a short delay

@@ -8,15 +8,14 @@ from pydantic import BaseModel
 from datetime import datetime
 import logging
 
-from backend.database import get_db, User, Notification
+from backend.database import get_db, User, Notification, ExternalDataSource, SyncLog
 from backend.routers.auth_router import get_current_user
-from Agent.data_ingestion.models import ExternalDataSource, SyncLog
 from Agent.data_ingestion.db_connector import ExternalDBConnector
 from Agent.data_ingestion.sync_service import SyncService
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/data-sources", tags=["data-sources"])
+router = APIRouter(tags=["data-sources"])
 
 
 # Pydantic models for request/response
@@ -118,14 +117,14 @@ async def request_data_source(
     - University Admin can request (auto-classified as institutional)
     """
     # Check permissions
-    if current_user.role not in ["ministry_admin", "university_admin"]:
+    if current_user.role not in ["developer", "ministry_admin", "university_admin"]:
         raise HTTPException(
             status_code=403, 
-            detail="Only Ministry or University Admins can request data sources"
+            detail="Only Developer, Ministry or University Admins can request data sources"
         )
     
-    # Validate institution association
-    if not current_user.institution_id:
+    # Validate institution association (not required for developers)
+    if current_user.role != "developer" and not current_user.institution_id:
         raise HTTPException(
             status_code=400,
             detail="User must be associated with an institution to request data sources"
@@ -196,8 +195,12 @@ async def request_data_source(
                     detail=f"Failed to encrypt Supabase key: {str(e)}"
                 )
         
-        # Determine classification
-        if current_user.role == "university_admin":
+        # Determine classification and institution
+        if current_user.role == "developer":
+            # Developer - can set any classification, no institution required
+            data_classification = request.data_classification or "public"
+            institution_id = current_user.institution_id  # May be None
+        elif current_user.role == "university_admin":
             # University admin - always institutional
             data_classification = "institutional"
             institution_id = current_user.institution_id
@@ -271,8 +274,11 @@ async def get_my_requests(
     
     - Ministry/University admins see their own requests
     """
-    if current_user.role not in ["ministry_admin", "university_admin"]:
-        raise HTTPException(status_code=403, detail="Access denied")
+    if current_user.role not in ["developer", "ministry_admin", "university_admin"]:
+        raise HTTPException(
+            status_code=403, 
+            detail=f"Access denied. Current role: {current_user.role}. Required roles: developer, ministry_admin, or university_admin"
+        )
     
     requests = db.query(ExternalDataSource).filter(
         ExternalDataSource.requested_by_user_id == current_user.id

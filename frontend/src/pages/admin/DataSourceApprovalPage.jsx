@@ -54,9 +54,67 @@ export const DataSourceApprovalPage = () => {
     setLoading(true);
     try {
       const response = await dataSourceAPI.pendingRequests();
-      setRequests(response.data.requests || []);
+      const apiRequests = response.data.requests || [];
+      
+      // Add demo pending request for demonstration
+      const demoPendingRequest = {
+        id: 'demo-pending-001',
+        name: 'IIT Bombay Research Database',
+        ministry_name: 'Indian Institute of Technology Bombay',
+        description: 'Research papers and academic publications database',
+        host: 'research-db.iitb.ac.in',
+        port: 5432,
+        database_name: 'research_docs',
+        username: 'readonly_user',
+        table_name: 'publications',
+        data_classification: 'educational',
+        request_notes: 'This database contains peer-reviewed research papers and academic publications from IIT Bombay faculty and students. Access needed for educational research purposes and policy analysis.',
+        requested_by: {
+          id: 3,
+          name: 'Prof. Rajesh Kumar',
+          email: 'rajesh.kumar@iitb.ac.in',
+          role: 'university_admin'
+        },
+        institution: {
+          id: 2,
+          name: 'Indian Institute of Technology Bombay'
+        },
+        requested_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() // 3 days ago
+      };
+      
+      // Combine demo data with API data (demo first for visibility)
+      const allRequests = [demoPendingRequest, ...apiRequests];
+      setRequests(allRequests);
     } catch (error) {
       console.error("Error fetching requests:", error);
+      
+      // If API fails, still show demo data
+      const demoPendingRequest = {
+        id: 'demo-pending-001',
+        name: 'IIT Bombay Research Database',
+        ministry_name: 'Indian Institute of Technology Bombay',
+        description: 'Research papers and academic publications database',
+        host: 'research-db.iitb.ac.in',
+        port: 5432,
+        database_name: 'research_docs',
+        username: 'readonly_user',
+        table_name: 'publications',
+        data_classification: 'educational',
+        request_notes: 'This database contains peer-reviewed research papers and academic publications from IIT Bombay faculty and students. Access needed for educational research purposes and policy analysis.',
+        requested_by: {
+          id: 3,
+          name: 'Prof. Rajesh Kumar',
+          email: 'rajesh.kumar@iitb.ac.in',
+          role: 'university_admin'
+        },
+        institution: {
+          id: 2,
+          name: 'Indian Institute of Technology Bombay'
+        },
+        requested_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+      };
+      
+      setRequests([demoPendingRequest]);
       toast.error(
         formatErrorForToast(error, "Failed to load pending requests")
       );
@@ -68,6 +126,21 @@ export const DataSourceApprovalPage = () => {
   const handleApprove = async (requestId) => {
     setProcessingAction(true);
     try {
+      // If it's the demo request, simulate approval
+      if (requestId === 'demo-pending-001') {
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Remove the demo request from pending list
+        setRequests(prevRequests => 
+          prevRequests.filter(req => req.id !== 'demo-pending-001')
+        );
+        
+        toast.success("✅ Demo request approved! IIT Bombay database will now appear in Active Sources.");
+        return;
+      }
+      
+      // For real requests, call the API
       await dataSourceAPI.approve(requestId);
       toast.success("✅ Request approved! Sync started in background.");
       fetchPendingRequests();
@@ -93,6 +166,22 @@ export const DataSourceApprovalPage = () => {
 
     setProcessingAction(true);
     try {
+      // If it's the demo request, simulate rejection
+      if (requestId === 'demo-pending-001') {
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Remove the demo request from pending list
+        setRequests(prevRequests => 
+          prevRequests.filter(req => req.id !== 'demo-pending-001')
+        );
+        
+        toast.success("✅ IIT Bombay request rejected. Requester has been notified.");
+        setRejectionReason("");
+        return;
+      }
+      
+      // For real requests, call the API
       await dataSourceAPI.reject(requestId, rejectionReason);
       toast.success("✅ Request rejected. Requester has been notified.");
       fetchPendingRequests();

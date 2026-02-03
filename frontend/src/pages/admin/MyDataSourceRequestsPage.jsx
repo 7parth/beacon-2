@@ -9,6 +9,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { dataSourceAPI } from "../../services/api";
+import { useAuthStore } from "../../stores/authStore";
 import { PageHeader } from "../../components/common/PageHeader";
 import { LoadingSpinner } from "../../components/common/LoadingSpinner";
 import { Button } from "../../components/ui/button";
@@ -28,6 +29,7 @@ import { toast } from "sonner";
 import { formatErrorForToast } from "../../utils/errorHandlers";
 
 export const MyDataSourceRequestsPage = () => {
+  const { user } = useAuthStore();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -139,13 +141,26 @@ export const MyDataSourceRequestsPage = () => {
             <Database className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <h3 className="text-lg font-semibold mb-2">No Requests Yet</h3>
             <p className="text-sm sm:text-base text-muted-foreground mb-4">
-              You haven't submitted any data source connection requests.
+              {user?.role === 'developer' 
+                ? 'You can submit new requests or review pending ones.'
+                : "You haven't submitted any data source connection requests."
+              }
             </p>
-            <Button
-              onClick={() => (window.location.href = "/admin/data-sources")}
-            >
-              Submit New Request
-            </Button>
+            <div className="flex gap-2 flex-wrap justify-center">
+              <Button
+                onClick={() => (window.location.href = "/admin/data-sources")}
+              >
+                Submit New Request
+              </Button>
+              {user?.role === 'developer' && (
+                <Button
+                  variant="outline"
+                  onClick={() => (window.location.href = "/admin/data-source-approvals")}
+                >
+                  Review Pending Requests
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
       ) : (

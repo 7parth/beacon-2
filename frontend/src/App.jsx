@@ -236,7 +236,7 @@ const App = () => {
               path="data-sources"
               element={
                 <ProtectedRoute
-                  allowedRoles={["ministry_admin", "university_admin"]}
+                  allowedRoles={["developer", "ministry_admin", "university_admin"]}
                 >
                   <DataSourceRequestPage />
                 </ProtectedRoute>
