@@ -659,9 +659,9 @@ export const AIChatPage = () => {
             </div>
             <div className="flex-1 overflow-y-auto min-h-0 space-y-4 sm:space-y-6 mb-4 scrollbar-hide">
               <AnimatePresence>
-                {messages.map((message) => (
+                {messages.map((message, idx) => (
                   <Message
-                    key={message.id}
+                    key={`${message.id}-${idx}`}
                     message={message}
                     isUser={message.isUser}
                     onCitationClick={handleCitationClick}

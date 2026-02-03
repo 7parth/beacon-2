@@ -197,6 +197,10 @@ class BGEEmbedder:
             # Local model (development only)
             embedding = self.model.encode(text, convert_to_numpy=True)
             return embedding.tolist()
+            
+    def embed_query(self, text: str) -> List[float]:
+        """Alias for embed_text for LangChain compatibility"""
+        return self.embed_text(text)
     
     def embed_batch(self, texts: List[str], batch_size: int = 32) -> List[List[float]]:
         """

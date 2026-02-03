@@ -209,9 +209,9 @@ const ScrapingLogs = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {logs.map((log) => (
+              {logs.map((log, idx) => (
                 <motion.div
-                  key={log.id}
+                  key={`log-${log.id}-${idx}`}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   className="border rounded-lg p-4"
@@ -283,8 +283,8 @@ const ScrapingLogs = () => {
                       {log.errors && log.errors.length > 0 && (
                         <div>
                           <h4 className="font-semibold mb-2 text-red-500">Errors:</h4>
-                          {log.errors.map((error, idx) => (
-                            <Alert key={idx} variant="destructive" className="mb-2">
+                          {log.errors.map((error, errorIdx) => (
+                            <Alert key={`error-${log.id}-${errorIdx}`} variant="destructive" className="mb-2">
                               <AlertCircle className="h-4 w-4" />
                               <AlertDescription>{error.message}</AlertDescription>
                             </Alert>
@@ -296,9 +296,9 @@ const ScrapingLogs = () => {
                       <div>
                         <h4 className="font-semibold mb-2">Activity Log:</h4>
                         <div className="bg-muted rounded-lg p-3 max-h-64 overflow-y-auto">
-                          {log.messages && log.messages.map((message, idx) => (
+                          {log.messages && log.messages.map((message, msgIdx) => (
                             <p
-                              key={idx}
+                              key={`msg-${log.id}-${msgIdx}`}
                               className="text-sm font-mono mb-1"
                             >
                               {message}

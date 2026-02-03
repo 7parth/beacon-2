@@ -1083,9 +1083,9 @@ export const WebScrapingPage = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {sources.map((source) => (
+                  {sources.map((source, idx) => (
                     <motion.div
-                      key={source.id}
+                      key={`source-${source.id}-${idx}`}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       className="border rounded-lg p-4 hover:bg-accent/50 transition-colors"
@@ -1226,8 +1226,8 @@ export const WebScrapingPage = () => {
                   </p>
                 ) : (
                   <div className="space-y-3">
-                    {logs.map((log) => (
-                      <div key={log.id} className="border-b pb-3 last:border-0">
+                    {logs.map((log, idx) => (
+                      <div key={`log-${log.id}-${idx}`} className="border-b pb-3 last:border-0">
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             <p className="font-medium text-sm">
@@ -1369,7 +1369,7 @@ export const WebScrapingPage = () => {
                       })
                       .map((doc, idx) => (
                         <div
-                          key={idx}
+                          key={`doc-${idx}-${doc.url?.slice(-20) || idx}`}
                           className="flex items-start gap-3 border-b pb-3 last:border-0"
                         >
                           <input
@@ -1513,7 +1513,7 @@ export const WebScrapingPage = () => {
                     <div className="mt-2 space-y-2 max-h-64 overflow-y-auto">
                       {previewData.documents?.map((doc, idx) => (
                         <div
-                          key={idx}
+                          key={`preview-${idx}`}
                           className="text-sm p-2 border rounded hover:bg-accent"
                         >
                           <p className="font-medium truncate">{doc.text}</p>

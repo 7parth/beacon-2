@@ -1,22 +1,18 @@
-"""ReAct agent with LangGraph for policy Q&A with quota management"""
-import logging
-import os
-from typing import TypedDict, Annotated, Sequence, AsyncGenerator, List
-from pathlib import Path
-import operator
-import time
-import asyncio
-
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 from langchain.tools import Tool, StructuredTool
 from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.callbacks.base import BaseCallbackHandler
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import TypedDict, Annotated, Sequence, Optional, AsyncGenerator, List
+import operator
+from pathlib import Path
+import logging
+import os
 
 from Agent.tools.lazy_search_tools import (
     search_documents_lazy,
@@ -335,6 +331,9 @@ class PolicyRAGAgent:
         self.current_user_role = None
         self.current_user_institution_id = None
         
+        # Search cache to prevent duplicate searches within the same query
+        self._search_cache = {}
+        
         # Setup tools and agent
         self._setup_tools()
         
@@ -349,7 +348,7 @@ class PolicyRAGAgent:
         Initialize LLM based on provider with quota management
         
         Args:
-            provider: LLM provider ("openrouter", "gemini", "openai", "ollama")
+            provider: LLM provider ("openrouter", "gemini", "openai", "ollama", "groq")
             google_api_key: Google API key for Gemini
             temperature: LLM temperature
         
@@ -357,7 +356,21 @@ class PolicyRAGAgent:
             Initialized LLM instance
         """
         try:
-            if provider == "gemini":
+            if provider == "groq":
+                groq_api_key = os.getenv("GROQ_API_KEY")
+                if not groq_api_key:
+                    logger.warning("GROQ_API_KEY not found - Groq unavailable")
+                    return None
+                
+                logger.info("Initializing Groq (openai/gpt-oss-20b) for RAG agent")
+                return ChatGroq(
+                    model="openai/gpt-oss-20b",
+                    api_key=groq_api_key,
+                    temperature=temperature,
+                    streaming=False
+                )
+
+            elif provider == "gemini":
                 if not google_api_key:
                     logger.warning("GOOGLE_API_KEY not found - Gemini unavailable")
                     return None
@@ -591,7 +604,8 @@ CRITICAL RULES:
 3. After finding documents with list_documents, use search_specific_document to get detailed content
 4. Try multiple search strategies automatically before giving up
 5. Present results directly - don't ask permission to search
-6. **LANGUAGE RULE: ALWAYS respond in the SAME LANGUAGE as the user's question**
+6. **CRITICAL: NEVER repeat the same search twice. If you already searched for something, USE THOSE RESULTS.**
+7. **LANGUAGE RULE: ALWAYS respond in the SAME LANGUAGE as the user's question**
    - If user asks in Hindi (हिंदी), respond in Hindi
    - If user asks in English, respond in English
    - Detect the language from the user's input and match it exactly
@@ -637,17 +651,33 @@ REMEMBER: Search in English, respond in user's language!"""),
             tools=self.tools,
             verbose=True,
             handle_parsing_errors=True,
+            max_iterations=5,  # Limit to 5 tool calls to prevent rate limiting issues
             max_execution_time=60,  # Increased timeout for embedding operations
             return_intermediate_steps=True
         )
     
     def _search_documents_wrapper(self, query: str) -> str:
-        """Wrapper to inject user context into enhanced search with metadata fallback"""
-        return search_documents_with_metadata_fallback(
+        """Wrapper to inject user context into enhanced search with metadata fallback.
+        Uses caching to prevent duplicate searches within the same session."""
+        # Normalize query for cache key
+        cache_key = query.lower().strip()
+        
+        # Check if we already searched for this (or very similar query)
+        if cache_key in self._search_cache:
+            logger.info(f"Returning cached result for query: '{query}'")
+            return self._search_cache[cache_key]
+        
+        # Perform the search
+        result = search_documents_with_metadata_fallback(
             query=query,
             user_role=self.current_user_role,
             user_institution_id=self.current_user_institution_id
         )
+        
+        # Cache the result
+        self._search_cache[cache_key] = result
+        
+        return result
     
     def _get_document_metadata_wrapper(self) -> str:
         """Wrapper for get_document_metadata - returns list of all documents"""
@@ -658,13 +688,28 @@ REMEMBER: Search in English, respond in user's language!"""),
         document_id: int,
         query: str
     ) -> str:
-        """Structured wrapper for search_specific_document with proper argument handling"""
-        return search_specific_document_lazy(
+        """Structured wrapper for search_specific_document with proper argument handling.
+        Uses caching to prevent duplicate searches."""
+        # Create cache key for specific document search
+        cache_key = f"doc_{document_id}_{query.lower().strip()}"
+        
+        # Check cache
+        if cache_key in self._search_cache:
+            logger.info(f"Returning cached result for doc {document_id}: '{query}'")
+            return self._search_cache[cache_key]
+        
+        # Perform search
+        result = search_specific_document_lazy(
             document_id=int(document_id),
             query=query,
             user_role=self.current_user_role,
             user_institution_id=self.current_user_institution_id
         )
+        
+        # Cache result
+        self._search_cache[cache_key] = result
+        
+        return result
     
     def _count_documents_structured(
         self,
@@ -798,8 +843,8 @@ REMEMBER: Search in English, respond in user's language!"""),
             result = self.agent_executor.invoke({"input": input_with_context})
             
             # Check if agent hit iteration limit
-            if "intermediate_steps" in result and len(result["intermediate_steps"]) >= 15:
-                logger.warning(f"⚠️ Agent hit iteration limit (15) for query: {state['query'][:50]}...")
+            if "intermediate_steps" in result and len(result["intermediate_steps"]) >= 5:
+                logger.warning(f"⚠️ Agent hit iteration limit (5) for query: {state['query'][:50]}...")
             
             state["response"] = result.get("output", "No response generated")
             state["messages"].append({
@@ -929,6 +974,9 @@ REMEMBER: Search in English, respond in user's language!"""),
         # Set user context for this query
         self.current_user_role = user_role
         self.current_user_institution_id = user_institution_id
+        
+        # Clear search cache for this new query to allow fresh searches
+        self._search_cache = {}
         
         # Use unique thread_id per query to avoid Gemini function calling history issues
         # TODO: Re-enable conversation memory once LangChain fixes Gemini function calling history

@@ -121,6 +121,42 @@ export const EnhancedWebScrapingPage = () => {
     }
   };
 
+  const handleAddSource = async () => {
+    try {
+      const keywords = newSource.keywords
+        ? newSource.keywords.split(",").map((k) => k.trim())
+        : null;
+
+      await api.post("/api/web-scraping/sources", {
+        name: newSource.name,
+        url: newSource.url,
+        description: newSource.description,
+        keywords: keywords,
+        max_documents: parseInt(newSource.max_documents),
+        pagination_enabled: newSource.pagination_enabled,
+        max_pages: parseInt(newSource.max_pages),
+        scraping_enabled: true,
+      });
+
+      toast.success("Enhanced source added successfully!");
+      setIsAddDialogOpen(false);
+      setNewSource({
+        name: "",
+        url: "",
+        description: "",
+        keywords: "",
+        max_documents: 1500,
+        pagination_enabled: true,
+        max_pages: 100,
+        incremental: true,
+      });
+      fetchData();
+    } catch (error) {
+      console.error("Error adding source:", error);
+      toast.error(error.response?.data?.detail || "Failed to add source");
+    }
+  };
+
   const handleEnhancedScrape = async (sourceId) => {
     try {
       setScrapingInProgress((prev) => ({ ...prev, [sourceId]: true }));
@@ -471,9 +507,9 @@ export const EnhancedWebScrapingPage = () => {
                         family.ministry?.toLowerCase().includes(filter)
                       );
                     })
-                    .map((family) => (
+                    .map((family, idx) => (
                       <motion.div
-                        key={family.id}
+                        key={`family-${family.id}-${idx}`}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         className="border rounded-lg p-4 hover:bg-accent/50 transition-colors"
@@ -554,7 +590,109 @@ export const EnhancedWebScrapingPage = () => {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                  {/* Same form fields as before, plus: */}
+                  <div className="grid gap-2">
+                    <Label htmlFor="name">Source Name</Label>
+                    <Input
+                      id="name"
+                      placeholder="e.g., UGC Official Website"
+                      value={newSource.name}
+                      onChange={(e) =>
+                        setNewSource({ ...newSource, name: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="url">URL</Label>
+                    <Input
+                      id="url"
+                      placeholder="https://www.ugc.gov.in/"
+                      value={newSource.url}
+                      onChange={(e) =>
+                        setNewSource({ ...newSource, url: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="description">Description (Optional)</Label>
+                    <Input
+                      id="description"
+                      placeholder="Official website for policies and circulars"
+                      value={newSource.description}
+                      onChange={(e) =>
+                        setNewSource({
+                          ...newSource,
+                          description: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="keywords">
+                      Keywords (Optional) - Filter documents during scraping
+                    </Label>
+                    <Input
+                      id="keywords"
+                      placeholder="policy, circular, notification (comma-separated)"
+                      value={newSource.keywords}
+                      onChange={(e) =>
+                        setNewSource({ ...newSource, keywords: e.target.value })
+                      }
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Only documents containing these keywords will be scraped.
+                      Leave empty to scrape all documents.
+                    </p>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="max_docs">Max Documents per Scrape</Label>
+                    <Input
+                      id="max_docs"
+                      type="number"
+                      value={newSource.max_documents}
+                      onChange={(e) =>
+                        setNewSource({
+                          ...newSource,
+                          max_documents: parseInt(e.target.value) || 1500,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="pagination">Enable Pagination</Label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="pagination"
+                        type="checkbox"
+                        checked={newSource.pagination_enabled}
+                        onChange={(e) =>
+                          setNewSource({
+                            ...newSource,
+                            pagination_enabled: e.target.checked,
+                          })
+                        }
+                        className="h-4 w-4"
+                      />
+                      <span className="text-sm">
+                        Automatically follow pagination links
+                      </span>
+                    </div>
+                  </div>
+                  {newSource.pagination_enabled && (
+                    <div className="grid gap-2">
+                      <Label htmlFor="max_pages">Max Pages to Scrape</Label>
+                      <Input
+                        id="max_pages"
+                        type="number"
+                        value={newSource.max_pages}
+                        onChange={(e) =>
+                          setNewSource({
+                            ...newSource,
+                            max_pages: parseInt(e.target.value) || 100,
+                          })
+                        }
+                      />
+                    </div>
+                  )}
                   <div className="grid gap-2">
                     <Label htmlFor="incremental">
                       Enable Incremental Scraping
@@ -581,7 +719,6 @@ export const EnhancedWebScrapingPage = () => {
                       document updates
                     </p>
                   </div>
-                  {/* ... other form fields ... */}
                 </div>
                 <DialogFooter>
                   <Button
@@ -590,11 +727,7 @@ export const EnhancedWebScrapingPage = () => {
                   >
                     Cancel
                   </Button>
-                  <Button
-                    onClick={() => {
-                      /* handleAddSource with enhanced features */
-                    }}
-                  >
+                  <Button onClick={handleAddSource}>
                     Add Enhanced Source
                   </Button>
                 </DialogFooter>
@@ -604,7 +737,7 @@ export const EnhancedWebScrapingPage = () => {
             <Button
               variant="outline"
               onClick={() => {
-                /* handleQuickDemo with families */
+                toast.info("Enhanced Demo feature coming soon!");
               }}
             >
               <Zap className="mr-2 h-4 w-4" />
@@ -632,9 +765,9 @@ export const EnhancedWebScrapingPage = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {sources.map((source) => (
+                  {sources.map((source, idx) => (
                     <motion.div
-                      key={source.id}
+                      key={`source-${source.id}-${idx}`}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       className="border rounded-lg p-4 hover:bg-accent/50 transition-colors"
@@ -744,7 +877,7 @@ export const EnhancedWebScrapingPage = () => {
                 <div className="mt-2 space-y-2 max-h-64 overflow-y-auto">
                   {selectedFamily.versions?.map((version, idx) => (
                     <div
-                      key={version.document_id}
+                      key={`version-${version.document_id}-${idx}`}
                       className="text-sm p-3 border rounded hover:bg-accent"
                     >
                       <div className="flex items-center justify-between mb-1">

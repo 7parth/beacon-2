@@ -9,7 +9,11 @@ import os
 from dotenv import load_dotenv
 from sqlalchemy import UniqueConstraint
 
-load_dotenv()
+from pathlib import Path
+
+# Load .env file from the same directory as this file
+env_path = Path(__file__).resolve().parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
 # Construct DATABASE_URL from individual components
 DATABASE_HOSTNAME = os.getenv("DATABASE_HOSTNAME")

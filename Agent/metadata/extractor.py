@@ -16,6 +16,7 @@ except ImportError:
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 import os
 
 # Setup logging
@@ -84,7 +85,21 @@ class MetadataExtractor:
     def _initialize_llm(self, provider: str):
         """Initialize LLM based on provider"""
         try:
-            if provider == "openrouter":
+            if provider == "groq":
+                groq_api_key = os.getenv("GROQ_API_KEY")
+                if not groq_api_key:
+                    logger.warning("GROQ_API_KEY not found - Groq unavailable")
+                    return None
+                
+                logger.info("Initializing Groq (openai/gpt-oss-20b) for metadata extraction")
+                return ChatGroq(
+                    model="openai/gpt-oss-20b",
+                    api_key=groq_api_key,
+                    temperature=0.1,
+                    max_tokens=2000
+                )
+
+            elif provider == "openrouter":
                 if not self.openrouter_api_key:
                     logger.warning("OPENROUTER_API_KEY not found - OpenRouter unavailable")
                     return None

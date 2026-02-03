@@ -11,7 +11,7 @@ langgraph==0.2.66
 langchain-google-genai==2.0.8
 google-generativeai==0.8.3
 langsmith
-langchain-openai==0.2.14  # For OpenRouter and OpenAI APIs
+langchain-groq==0.2.3
 
 # ============================================
 # Web Framework & API
@@ -150,8 +150,8 @@ requests==2.32.3
 # Heavy dependencies removed for cloud deployment
 
 # Local AI Models (DEVELOPMENT ONLY - Requires 4-8GB RAM)
-# sentence-transformers==3.3.1  # BGE-M3 embeddings (2-4GB)
-# torch>=2.0.0  # PyTorch for local models
+sentence-transformers==3.3.1  # BGE-M3 embeddings (2-4GB)
+torch>=2.0.0  # PyTorch for local models
 # transformers==4.57.3  # Hugging Face models
 
 # Local OCR (DEVELOPMENT ONLY)
