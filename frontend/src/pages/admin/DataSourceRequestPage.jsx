@@ -94,7 +94,7 @@ export const DataSourceRequestPage = () => {
     table_name: "",
     file_column: "",
     filename_column: "",
-    data_classification: "educational",
+    data_classification: user?.role === "developer" ? "public" : "educational",
     request_notes: "",
   });
 
@@ -283,6 +283,7 @@ export const DataSourceRequestPage = () => {
   };
 
   const isUniversityAdmin = user?.role === "university_admin";
+  const isDeveloper = user?.role === "developer";
 
   return (
     <div className="space-y-6">
@@ -636,6 +637,11 @@ export const DataSourceRequestPage = () => {
                       <SelectItem value="confidential">
                         Confidential - Ministry Only
                       </SelectItem>
+                      {isDeveloper && (
+                        <SelectItem value="institutional">
+                          Institutional - Institution Members Only
+                        </SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </FormField>

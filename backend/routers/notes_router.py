@@ -7,7 +7,7 @@ from datetime import datetime
 from backend.database import SessionLocal, UserNote, User, Document
 from backend.routers.auth_router import get_current_user
 
-router = APIRouter(prefix="/api/notes", tags=["notes"])
+router = APIRouter(prefix="/notes", tags=["notes"])
 
 
 def get_db():
