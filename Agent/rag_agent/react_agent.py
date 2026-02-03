@@ -787,6 +787,62 @@ REMEMBER: Search in English, respond in user's language!"""),
         # Compile with memory
         return workflow.compile(checkpointer=self.memory)
     
+    def _classify_query_with_llm(self, query: str) -> str:
+        """
+        Use LLM to classify if query needs tools or can be answered directly.
+        Returns: 'simple' or 'complex'
+        
+        Simple: General knowledge questions answerable from LLM training data
+        Complex: Questions requiring document search, calculations, current info, etc.
+        """
+        classification_prompt = """Classify this user query into one of two categories:
+
+SIMPLE: General knowledge questions that you can answer from your training data.
+Examples: "Who is the PM of India?", "What is photosynthesis?", "Explain quantum physics", "What is machine learning?"
+
+COMPLEX: Questions that require:
+- Searching documents/PDFs/policies
+- Looking up current/latest/recent information  
+- Calculations or comparisons
+- Anything about uploaded files, UGC, ministry documents, guidelines, circulars, notices
+- Questions containing years like 2024, 2025, 2026
+
+Query: "{query}"
+
+Respond with ONLY one word: either "simple" or "complex"
+"""
+        
+        try:
+            response = self.llm.invoke([
+                {"role": "user", "content": classification_prompt.format(query=query)}
+            ])
+            
+            result = response.content.strip().lower()
+            logger.info(f"Query classification: '{query[:50]}...' → {result}")
+            
+            if "simple" in result:
+                return "simple"
+            return "complex"
+        except Exception as e:
+            logger.warning(f"Classification failed, defaulting to complex: {e}")
+            return "complex"  # Default to complex (safer)
+    
+    def _direct_answer(self, question: str) -> str:
+        """
+        Answer simple questions directly without using any tools.
+        Used for general knowledge queries that don't need document search.
+        """
+        try:
+            logger.info(f"Answering simple query directly: '{question[:50]}...'")
+            response = self.llm.invoke([
+                {"role": "system", "content": "You are a helpful assistant. Answer the question directly and concisely. Do not mention anything about tools, documents, or searching."},
+                {"role": "user", "content": question}
+            ])
+            return response.content
+        except Exception as e:
+            logger.error(f"Direct answer failed: {e}")
+            return "I apologize, but I couldn't process your question. Please try again."
+    
     def _classify_intent(self, state: AgentState) -> AgentState:
         """Classify the intent of the user query"""
         try:
@@ -823,6 +879,23 @@ REMEMBER: Search in English, respond in user's language!"""),
         except (UnicodeEncodeError, UnicodeDecodeError):
             logger.info(f"Processing query: [Unicode query - {len(state['query'])} chars]")
         
+        # NEW: Check if this is a simple query that can be answered directly
+        query_type = self._classify_query_with_llm(state['query'])
+        
+        if query_type == "simple":
+            # Answer directly without tools - faster and avoids rate limits
+            logger.info("Simple query detected - answering directly without tools")
+            response = self._direct_answer(state['query'])
+            state["response"] = response
+            state["messages"].append({
+                "role": "assistant",
+                "content": response
+            })
+            state["citations"] = []
+            return state
+        
+        # Complex query - use AgentExecutor with tools
+        logger.info("Complex query detected - using AgentExecutor with tools")
         try:
             # Build context from previous messages for conversation continuity
             chat_history = state.get("messages", [])
@@ -845,8 +918,52 @@ REMEMBER: Search in English, respond in user's language!"""),
             # Check if agent hit iteration limit
             if "intermediate_steps" in result and len(result["intermediate_steps"]) >= 5:
                 logger.warning(f"⚠️ Agent hit iteration limit (5) for query: {state['query'][:50]}...")
+                
+                # Replace unfriendly message with helpful fallback
+                raw_output = result.get("output", "")
+                if "Agent stopped" in raw_output or not raw_output.strip():
+                    # Extract context from intermediate steps to synthesize response
+                    found_docs = []
+                    for action, observation in result.get("intermediate_steps", []):
+                        obs_str = str(observation)
+                        if "Result 1" in obs_str or "Document ID:" in obs_str:
+                            # Limit each observation to avoid token limits
+                            found_docs.append(obs_str[:2000])
+                    
+                    if found_docs:
+                        # Synthesize response from found documents
+                        logger.info(f"Synthesizing response from {len(found_docs)} search results")
+                        synthesis_prompt = f"""Based on the following search results, answer the user's question concisely.
+
+User question: {state['query']}
+
+Search results:
+{chr(10).join(found_docs[:3])}
+
+Provide a helpful, direct answer based on these results. If the results don't fully answer the question, mention what was found."""
+                        
+                        try:
+                            synthesis_response = self.llm.invoke([
+                                {"role": "user", "content": synthesis_prompt}
+                            ])
+                            state["response"] = synthesis_response.content
+                            logger.info("Successfully synthesized response from found documents")
+                        except Exception as e:
+                            logger.error(f"Synthesis failed: {e}")
+                            state["response"] = (
+                                "I found some relevant documents but couldn't complete the analysis. "
+                                "Please try a more specific question."
+                            )
+                    else:
+                        state["response"] = (
+                            "I couldn't find relevant documents for your query. "
+                            "Please try different keywords or a more specific question."
+                        )
+                else:
+                    state["response"] = raw_output
+            else:
+                state["response"] = result.get("output", "No response generated")
             
-            state["response"] = result.get("output", "No response generated")
             state["messages"].append({
                 "role": "assistant",
                 "content": state["response"]
