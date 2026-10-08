@@ -2,6 +2,10 @@
 
 **AI-powered platform for Ministry of Education (MoE) and Higher-Education institutions to retrieve, understand, compare, explain, and audit government policies.**
 
+## 📝 About
+
+BEACON is a policy intelligence platform built for government and higher-education institutions. It combines AI-powered search, multilingual understanding, document workflows, and role-based governance to help teams manage policy documents and make faster, evidence-backed decisions.
+
 [![Status](https://img.shields.io/badge/status-production%20ready-brightgreen)]()
 [![Version](https://img.shields.io/badge/version-2.0.0-blue)]()
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)]()
